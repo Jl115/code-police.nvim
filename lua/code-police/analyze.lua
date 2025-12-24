@@ -57,9 +57,7 @@ local function get_rule_points(capture_name, captured_node, sibling, mapping)
 	return points
 end
 
-local function get_complexity_count(node, complexity_query, mapping)
-	local complexityCount = 0
-
+local function get_body_node(node, mapping)
 	local body_node = nil
 	local current_sibling = node:next_named_sibling()
 
@@ -81,6 +79,14 @@ local function get_complexity_count(node, complexity_query, mapping)
 
 		current_sibling = current_sibling:next_named_sibling()
 	end
+
+	return body_node
+end
+
+local function get_complexity_count(node, complexity_query, mapping)
+	local complexityCount = 0
+
+	local body_node = get_body_node(node, mapping)
 
 	if not body_node then
 		return 0
