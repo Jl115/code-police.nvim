@@ -31,7 +31,7 @@ local function get_nesting_depth(node, root_node, mapping)
 	return depth
 end
 
-local function get_rule_points(capture_name, captured_node, sibling, mapping) -- 1. Add mapping here
+local function get_rule_points(capture_name, captured_node, sibling, mapping)
 	local points = 0
 
 	if capture_name == "rule_if" then
@@ -60,37 +60,42 @@ end
 local function get_complexity_count(node, complexity_query, mapping)
 	local complexityCount = 0
 
-	local sibling = node:next_named_sibling()
+	local body_node = nil
+	local current_sibling = node:next_named_sibling()
 
-	if sibling == nil then
-		return 0
-	end
+	while current_sibling do
+		local sib_type = current_sibling:type()
+		local is_match = false
 
-	local sib_type = sibling:type()
-	local is_valid_body = false
+		for _, type in ipairs(mapping.body_types) do
+			if sib_type == type then
+				is_match = true
+				break
+			end
+		end
 
-	for _, type in ipairs(mapping.body_types) do
-		if sib_type == type then
-			is_valid_body = true
+		if is_match then
+			body_node = current_sibling
 			break
 		end
+
+		current_sibling = current_sibling:next_named_sibling()
 	end
 
-	if not is_valid_body then
+	if not body_node then
 		return 0
 	end
 
-	local start_row, _, end_row, _ = sibling:range()
+	local start_row, _, end_row, _ = body_node:range()
 	local total_lines = end_row - start_row
 
 	if total_lines > 0 then
 		complexityCount = complexityCount + math.floor(total_lines / 10)
 	end
 
-	for id, captured_node, _ in complexity_query:iter_captures(sibling, 0, 0, -1) do
+	for id, captured_node, _ in complexity_query:iter_captures(body_node, 0, 0, -1) do
 		local capture_name = complexity_query.captures[id]
-
-		complexityCount = complexityCount + get_rule_points(capture_name, captured_node, sibling, mapping)
+		complexityCount = complexityCount + get_rule_points(capture_name, captured_node, body_node, mapping)
 	end
 
 	return complexityCount
@@ -120,7 +125,12 @@ local function check(ns_id, ft, mapping)
 	local status_func, func_query = pcall(vim.treesitter.query.parse, ft, func_query_string)
 	local status_cpx, complexity_query = pcall(vim.treesitter.query.parse, ft, complexity_query_string)
 
-	if not status_func or not status_cpx then
+	if not status_func then
+		vim.notify("Func Query Error: " .. tostring(func_query), vim.log.levels.ERROR)
+		return
+	end
+	if not status_cpx then
+		vim.notify("Complexity Query Error: " .. tostring(complexity_query), vim.log.levels.ERROR)
 		return
 	end
 
