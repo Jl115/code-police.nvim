@@ -8,11 +8,11 @@ local cache = {
 
 local function get_status(complexityCount)
 	if complexityCount > 20 then
-		return "■", "CodePoliceError"
+		return "■ refactor this bs", "CodePoliceError"
 	elseif complexityCount > 10 then
-		return "■", "CodePoliceWarn"
+		return "■ common you can do better", "CodePoliceWarn"
 	else
-		return "■", "CodePoliceOk"
+		return "■ you doing well!", "CodePoliceOk"
 	end
 end
 
@@ -167,7 +167,6 @@ end
 function M.run(ns_id)
 	general.check()
 	local ft = vim.bo.filetype
-	vim.notify(ft, vim.log.levels.WARN)
 	local mapping = get_or_load_mapping(ft)
 
 	if mapping then
